@@ -1,0 +1,6 @@
+{
+  "name": "PublicEye",
+  "description": "Community-driven real-time incident reporting and verification platform for Bangladesh.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

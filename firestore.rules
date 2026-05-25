@@ -1,0 +1,170 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global safety catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Global shared helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'publiceye33@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+    
+    // ------------------ USERS COLLECTION ------------------
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'area', 'joinedAt', 'postsCount']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.area is string && data.area.size() > 0 && data.area.size() <= 200 &&
+             data.joinedAt is timestamp &&
+             data.postsCount is int && data.postsCount >= 0 &&
+             (!('falsePostCount' in data) || data.falsePostCount is int) &&
+             (!('spamCount' in data) || data.spamCount is int) &&
+             (!('flagged' in data) || data.flagged is bool);
+    }
+    
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().joinedAt == request.time;
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (request.auth.uid == userId && 
+         isValidUser(incoming()) &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'area', 'postsCount']))
+      );
+      allow delete: if isAdmin();
+    }
+    
+    // ------------------ POSTS COLLECTION ------------------
+    function isValidPost(data) {
+      return data.keys().hasAll([
+        'title', 'description', 'latitude', 'longitude', 'locationName', 
+        'type', 'isAnonymous', 'authorId', 'authorName', 'createdAt', 'expiresAt', 'isExpired'
+      ]) &&
+      data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+      data.description is string && data.description.size() > 0 && data.description.size() <= 3000 &&
+      data.latitude is number && data.latitude >= -90.0 && data.latitude <= 90.0 &&
+      data.longitude is number && data.longitude >= -180.0 && data.longitude <= 180.0 &&
+      data.locationName is string && data.locationName.size() > 0 && data.locationName.size() <= 250 &&
+      data.type is string && (data.type == 'alert' || data.type == 'civic') &&
+      data.isAnonymous is bool &&
+      data.authorId is string && data.authorId.size() <= 128 &&
+      data.authorName is string && data.authorName.size() <= 100 &&
+      data.createdAt is timestamp &&
+      data.expiresAt is timestamp &&
+      data.isExpired is bool &&
+      (!('category' in data) || data.category is string) &&
+      (!('severity' in data) || data.severity is string) &&
+      (!('imageUrl' in data) || data.imageUrl is string) &&
+      (!('votesTrue' in data) || data.votesTrue is int) &&
+      (!('votesFalse' in data) || data.votesFalse is int) &&
+      (!('votesUnsure' in data) || data.votesUnsure is int) &&
+      (!('votesSupport' in data) || data.votesSupport is int) &&
+      (!('votesNotPriority' in data) || data.votesNotPriority is int) &&
+      (!('reportsCount' in data) || data.reportsCount is int) &&
+      (!('isFlagged' in data) || data.isFlagged is bool);
+    }
+    
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidPost(incoming()) && incoming().authorId == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (existing().authorId == request.auth.uid && 
+         isValidPost(incoming()) && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['isExpired', 'expiresAt'])) ||
+        (isValidPost(incoming()) && 
+         incoming().diff(existing()).affectedKeys().hasOnly([
+           'votesTrue', 'votesFalse', 'votesUnsure', 'votesSupport', 'votesNotPriority', 'reportsCount', 'isFlagged'
+         ]))
+      );
+      allow delete: if isAdmin();
+      
+      // ------------------ POSTS/VOTES SUBCOLLECTION ------------------
+      function isValidVote(data) {
+        return data.keys().hasAll(['voteType', 'votedById', 'createdAt']) &&
+               data.voteType is string && (
+                 data.voteType == 'true' || 
+                 data.voteType == 'false' || 
+                 data.voteType == 'unsure' || 
+                 data.voteType == 'support' || 
+                 data.voteType == 'not_priority'
+               ) &&
+               data.votedById is string && data.votedById == request.auth.uid &&
+               data.createdAt is timestamp;
+      }
+      
+      match /votes/{userId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn() && request.auth.uid == userId && isValidVote(incoming()) && incoming().createdAt == request.time;
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+      
+      // ------------------ POSTS/COMMENTS SUBCOLLECTION ------------------
+      function isValidComment(data) {
+        return data.keys().hasAll(['content', 'isUpdate', 'isAnonymous', 'authorId', 'authorName', 'createdAt', 'reportsCount']) &&
+               data.content is string && data.content.size() > 0 && data.content.size() <= 1000 &&
+               data.isUpdate is bool &&
+               data.isAnonymous is bool &&
+               data.authorId is string && data.authorId == request.auth.uid &&
+               data.authorName is string &&
+               data.createdAt is timestamp &&
+               data.reportsCount is int &&
+               (!('imageUrl' in data) || data.imageUrl is string);
+      }
+      
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isValidComment(incoming()) && incoming().createdAt == request.time;
+        allow update: if isSignedIn() && (
+          isAdmin() ||
+          (incoming().diff(existing()).affectedKeys().hasOnly(['reportsCount']))
+        );
+        allow delete: if isAdmin() || (isSignedIn() && existing().authorId == request.auth.uid);
+      }
+    }
+    
+    // ------------------ REPORTS COLLECTION ------------------
+    function isValidReport(data) {
+      return data.keys().hasAll(['targetType', 'targetId', 'reason', 'reportedBy', 'createdAt']) &&
+             data.targetType is string && (data.targetType == 'post' || data.targetType == 'comment') &&
+             data.targetId is string &&
+             data.reason is string && data.reason.size() > 0 && data.reason.size() <= 500 &&
+             data.reportedBy is string && data.reportedBy == request.auth.uid &&
+             data.createdAt is timestamp &&
+             (!('postId' in data) || data.postId is string);
+    }
+    
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && isValidReport(incoming()) && incoming().createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+    
+    // Admins helper data validation
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}
