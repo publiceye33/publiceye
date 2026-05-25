@@ -1,264 +1,78 @@
 {
   "entities": {
-    "User": {
-      "title": "User Profile",
-      "description": "User profile containing public information and hidden moderation fields.",
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile inside PublicEye",
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string",
-          "description": "User's display name."
-        },
-        "area": {
-          "type": "string",
-          "description": "User's self-reported area or location in Bangladesh."
-        },
-        "joinedAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp indicating when the user joined."
-        },
-        "postsCount": {
-          "type": "integer",
-          "description": "Count of total posts created by the user."
-        },
-        "falsePostCount": {
-          "type": "integer",
-          "description": "Count of posts from this user voted as false news by the community (hidden from public UI)."
-        },
-        "spamCount": {
-          "type": "integer",
-          "description": "Spam score or behavior indicators tracked by backend (hidden from public UI)."
-        },
-        "flagged": {
-          "type": "boolean",
-          "description": "Whether this user account is flagged for admin review (hidden from public UI)."
-        }
+        "id": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "name": { "type": "string" },
+        "area": { "type": "string" },
+        "joinDate": { "type": "string" },
+        "postsCount": { "type": "integer" },
+        "falsePostCount": { "type": "integer" },
+        "spamBehavior": { "type": "boolean" },
+        "deviceFingerprint": { "type": "string" },
+        "isFlagged": { "type": "boolean" }
       },
-      "required": ["name", "area", "joinedAt", "postsCount"]
+      "required": ["id", "phoneNumber", "name", "area", "joinDate", "postsCount", "falsePostCount", "spamBehavior", "deviceFingerprint", "isFlagged"]
     },
-    "Post": {
-      "title": "Incident or civic demand report",
-      "description": "A community reported incident (alert) or civic demand.",
+    "IncidentPost": {
+      "title": "IncidentPost",
+      "description": "An incident post representing public alert or civic issue",
       "type": "object",
       "properties": {
-        "title": {
-          "type": "string",
-          "description": "Brief title of the incident or demand."
-        },
-        "description": {
-          "type": "string",
-          "description": "Full details of the report."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "Optional Cloudinary compressed image link."
-        },
-        "latitude": {
-          "type": "number",
-          "description": "GPS latitude."
-        },
-        "longitude": {
-          "type": "number",
-          "description": "GPS longitude."
-        },
-        "locationName": {
-          "type": "string",
-          "description": "Readable area name converted from coordinates."
-        },
-        "type": {
-          "type": "string",
-          "enum": ["alert", "civic"],
-          "description": "Whether it is an emergency Alert or Civic Demand."
-        },
-        "category": {
-          "type": "string",
-          "description": "Category (e.g. Fire, Accident, Flood, Storm, Robbery/Crime, Road damage, Water problem, Electricity problem, Gas leak, Other)."
-        },
-        "severity": {
-          "type": "string",
-          "enum": ["low", "medium", "high"],
-          "description": "Severity level of an Alert."
-        },
-        "isAnonymous": {
-          "type": "boolean",
-          "description": "Flag to protect poster's privacy."
-        },
-        "authorId": {
-          "type": "string",
-          "description": "UID of the author who posted."
-        },
-        "authorPhone": {
-          "type": "string",
-          "description": "Masked or blank phone of the author."
-        },
-        "authorName": {
-          "type": "string",
-          "description": "Display name of the author (fallback to Anonymous if anonymous)."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time the incident was reported."
-        },
-        "expiresAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Automatic expiration timestamp."
-        },
-        "isExpired": {
-          "type": "boolean",
-          "description": "Whether the post is moved to the expired archive."
-        },
-        "votesTrue": {
-          "type": "integer",
-          "description": "Number of 'True' votes (Alerts only)."
-        },
-        "votesFalse": {
-          "type": "integer",
-          "description": "Number of 'False News' votes (Alerts only)."
-        },
-        "votesUnsure": {
-          "type": "integer",
-          "description": "Number of 'Unsure' votes (Alerts only)."
-        },
-        "votesSupport": {
-          "type": "integer",
-          "description": "Number of 'Support' votes (Civic only)."
-        },
-        "votesNotPriority": {
-          "type": "integer",
-          "description": "Number of 'Not Priority' votes (Civic only)."
-        },
-        "reportsCount": {
-          "type": "integer",
-          "description": "Number of times this post is reported."
-        },
-        "isFlagged": {
-          "type": "boolean",
-          "description": "Whether the post is held for admin moderation."
-        }
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["Alert", "Civic"] },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "locationName": { "type": "string" },
+        "category": { "type": "string" },
+        "severity": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userArea": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isArchived": { "type": "boolean" },
+        "reportedCount": { "type": "integer" },
+        "expireTime": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "description", "latitude", "longitude", "locationName", "type", "isAnonymous", "authorId", "authorName", "createdAt", "expiresAt", "isExpired"]
-    },
-    "Vote": {
-      "title": "Vote entry",
-      "description": "A user's vote on a post to avoid duplicate voting.",
-      "type": "object",
-      "properties": {
-        "voteType": {
-          "type": "string",
-          "enum": ["true", "false", "unsure", "support", "not_priority"],
-          "description": "The specific vote cast by the user."
-        },
-        "votedById": {
-          "type": "string",
-          "description": "UID of the voter."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the vote."
-        }
-      },
-      "required": ["voteType", "votedById", "createdAt"]
+      "required": ["id", "type", "title", "description", "locationName", "isAnonymous", "userId", "userName", "userArea", "timestamp", "isArchived", "reportedCount", "expireTime"]
     },
     "Comment": {
-      "title": "Comment on a report",
-      "description": "Discussion, status update, photos from locals.",
+      "title": "Comment",
+      "description": "A comment left on an incident post",
       "type": "object",
       "properties": {
-        "content": {
-          "type": "string",
-          "description": "Comment content."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "Optional Cloudinary compressed image link."
-        },
-        "isUpdate": {
-          "type": "boolean",
-          "description": "Whether this is a status update (e.g. 'Fire is now extinguished')."
-        },
-        "isAnonymous": {
-          "type": "boolean",
-          "description": "Flag to comment anonymously."
-        },
-        "authorId": {
-          "type": "string",
-          "description": "UID of the poster."
-        },
-        "authorName": {
-          "type": "string",
-          "description": "Display name of the author."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time comment was written."
-        },
-        "reportsCount": {
-          "type": "integer",
-          "description": "Number of of reports on this comment."
-        }
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "content": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isAnonymous": { "type": "boolean" },
+        "isUpdate": { "type": "boolean" },
+        "reportedCount": { "type": "integer" }
       },
-      "required": ["content", "isUpdate", "isAnonymous", "authorId", "authorName", "createdAt", "reportsCount"]
-    },
-    "Report": {
-      "title": "Abuse or false report registry",
-      "description": "Reports filed by the community against post or comment for admin review.",
-      "type": "object",
-      "properties": {
-        "targetType": {
-          "type": "string",
-          "enum": ["post", "comment"],
-          "description": "The type of content reported."
-        },
-        "targetId": {
-          "type": "string",
-          "description": "The ID of the reported content."
-        },
-        "postId": {
-          "type": "string",
-          "description": "Post ID (for context if target is comment)."
-        },
-        "reason": {
-          "type": "string",
-          "description": "The reporter's rationale or selection."
-        },
-        "reportedBy": {
-          "type": "string",
-          "description": "UID of the reporter."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when report was submitted."
-        }
-      },
-      "required": ["targetType", "targetId", "reason", "reportedBy", "createdAt"]
+      "required": ["id", "postId", "userId", "userName", "content", "timestamp", "isAnonymous", "isUpdate", "reportedCount"]
     }
   },
   "firestore": {
-    "users/{userId}": {
-      "schema": "User",
-      "description": "User profiles which store profile particulars and hidden security scores."
+    "profiles/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles indexed by their auth IDs"
     },
     "posts/{postId}": {
-      "schema": "Post",
-      "description": "Collection of emergency alerts and civic demands."
-    },
-    "posts/{postId}/votes/{userId}": {
-      "schema": "Vote",
-      "description": "Individual voting records per post to guarantee one-user-one-vote."
+      "schema": "IncidentPost",
+      "description": "Feed item alerts and civic issues"
     },
     "posts/{postId}/comments/{commentId}": {
       "schema": "Comment",
-      "description": "Threaded comments or community-led status updates."
-    },
-    "reports/{reportId}": {
-      "schema": "Report",
-      "description": "Admin review request documents for reported posts and comments."
+      "description": "Comments and status updates on specific posts"
     }
   }
 }

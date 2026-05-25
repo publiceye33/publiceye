@@ -30,6 +30,10 @@ service cloud.firestore {
       return request.resource.data;
     }
 
+    type_checking_is_not_supported_as_this_comment_and_syntax_above {
+      // Dummy rule to demonstrate helper separation
+    }
+
     // --- COLLECTION RULES & SCHEMAS ---
 
     // USER PROFILES
